@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Stock Information: {{ stock_info.name }}</h1>
+        <p><strong>Symbol:</strong> {{ symbol }}</p>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Current Price</td><td>{{ stock_info.current_price }}</td></tr>
+                <tr><td>High</td><td>{{ stock_info.high }}</td></tr>
+                <tr><td>Low</td><td>{{ stock_info.low }}</td></tr>
+                <tr><td>Market Cap</td><td>{{ stock_info.market_cap }}</td></tr>
+                <tr><td>P/E Ratio</td><td>{{ stock_info.pe_ratio }}</td></tr>
+                <tr><td>PEG Ratio</td><td>{{ stock_info.peg_ratio }}</td></tr>
+                <tr><td>EPS</td><td>{{ stock_info.eps }}</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="mt-5">Stock Price (1-Day Intraday Chart)</h3>
+        <canvas id="stockChart"></canvas>
+
+        <a href="/" class="btn btn-secondary mt-3">Search Again</a>
+    </div>
+
+    <!-- JavaScript for Fetching Data and Updating Chart -->
+    <script>
+        async function fetchHistoricalData() {
+            const response = await fetch(`/api/historical/{{ symbol }}`);
+            const data = await response.json();
+
+            const labels = data.map(entry => entry.time);
+            const prices = data.map(entry => entry.close);
+
+            const ctx = document.getElementById("stockChart").getContext("2d");
+
+            if (window.stockChartInstance) {
+                window.stockChartInstance.destroy(); // Destroy old chart to update with new data
+            }
+
+            window.stockChartInstance = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Stock Price (5-min Interval)",
+                        data: prices,
+                        borderColor: "blue",
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { title: { display: true, text: "Time (HH:MM)" } },
+                        y: { title: { display: true, text: "Price (USD)" } }
+                    }
+                }
+            });
+
+            // Refresh chart every 30 seconds
+            setTimeout(fetchHistoricalData, 30000);
+        }
+
+        fetchHistoricalData(); // Load data when page loads
+    </script>
+</body>
+</html>
